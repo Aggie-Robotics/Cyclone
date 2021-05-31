@@ -1,0 +1,2 @@
+C:\MinGW\bin\ar.exe qc libWorlds.a CMakeFiles/Worlds.dir/src/main.cpp.obj
+C:\MinGW\bin\ranlib.exe libWorlds.a
