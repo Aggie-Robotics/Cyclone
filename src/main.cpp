@@ -75,6 +75,12 @@ void autonomous() {}
  * If the robot is disabled or communications is lost, the
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
+ *
+ * L1 = All forward
+ * L2 = All forward, intake backward
+ * R1 = All forward, top roller hold slow
+ * R2 = All backward
+ * Nothing = All stop
  */
 [[noreturn]] void opcontrol() {
 
@@ -85,71 +91,83 @@ void autonomous() {}
     pros::Motor right0(2);
     pros::Motor right1(3);
     pros::Motor right2(4);
-    pros::Motor left_intake(16,true);
+    pros::Motor left_intake(16);
     pros::Motor top_roller(5);
-    pros::Motor right_intake(15);
+    pros::Motor right_intake(15, true);
     pros::Motor bottom_rollers0(7,true);
     pros::Motor bottom_rollers1(8,true);
 
 
     while (true) {
-
         int left = master.get_analog(ANALOG_LEFT_Y);
-        int right = master.get_analog(ANALOG_RIGHT_Y);
-        int threshold = 10;
+        int right = master.get_analog(ANALOG_RIGHT_X);
+        constexpr int threshold = 0;
         top_roller.set_brake_mode(pros::motor_brake_mode_e::E_MOTOR_BRAKE_BRAKE);
-        if (abs(left) > threshold) {
-            left0 = left;
-            left1 = left;
-            left2 = left;
+        if (abs(left + right) > threshold) {
+            left0 = left + right;
+            left1 = left + right;
+            left2 = left + right;
         } else {
             left0 = 0;
             left1 = 0;
             left2 = 0;
         }
-        if (abs(right) > threshold) {
-            right0 = right;
-            right1 = right;
-            right2 = right;
+        if (abs(left - right) > threshold) {
+            right0 = left - right;
+            right1 = left - right;
+            right2 = left - right;
         } else {
             right0 = 0;
             right1 = 0;
             right2 = 0;
         }
 
-
-        if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+        if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
+            top_roller = 127;
+            left_intake = 127;
+            right_intake = 127;
             bottom_rollers0 = 127;
             bottom_rollers1 = 127;
-        } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
+        }
+        else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
+            top_roller = 127;
+            left_intake = -127;
+            right_intake = -127;
+            bottom_rollers0 = 127;
+            bottom_rollers1 = 127;
+        }
+        else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
+            top_roller = -40;
+            left_intake = 127;
+            right_intake = 127;
+            bottom_rollers0 = 127;
+            bottom_rollers1 = 127;
+        }
+        else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)){
+            top_roller = -127;
+            left_intake = -127;
+            right_intake = -127;
             bottom_rollers0 = -127;
             bottom_rollers1 = -127;
-
-        } else {
+        }
+        else{
+            top_roller = 0;
+            left_intake = 0;
+            right_intake = 0;
             bottom_rollers0 = 0;
             bottom_rollers1 = 0;
         }
 
-
-        if (master.get_digital(pros::E_CONTROLLER_DIGITAL_A))
+        if(master.get_digital(pros::E_CONTROLLER_DIGITAL_A)){
             top_roller = 127;
-        else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
-            top_roller = -127;
-        else {
-
-            top_roller = 0;
         }
-
-
-        if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+        // Push ball to bottom of robot
+        if(master.get_digital(pros::E_CONTROLLER_DIGITAL_B)){
+            top_roller = -127;
             left_intake = 127;
             right_intake = 127;
-        } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-            left_intake = -127;
-            right_intake = -127;
-        } else {
-            left_intake = 0;
-            right_intake = 0;
+            bottom_rollers0 = -127;
+            bottom_rollers1 = -127;
         }
 
         pros::delay(20);
